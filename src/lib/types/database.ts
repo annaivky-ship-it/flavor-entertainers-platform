@@ -326,3 +326,4 @@ export interface DatabaseExtended extends Database {
     };
   };
 }
+export * from './supabase'
