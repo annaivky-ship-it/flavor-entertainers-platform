@@ -100,7 +100,7 @@ export async function canManageBooking(bookingId: string) {
 
   return (
     booking?.client_id === profile.id ||
-    booking?.performer?.user_id === profile.id
+    booking?.performer?.[0]?.user_id === profile.id
   )
 }
 
@@ -124,6 +124,6 @@ export async function canViewPayment(paymentId: string) {
 
   return (
     payment?.booking?.client_id === profile.id ||
-    payment?.booking?.performer?.user_id === profile.id
+    payment?.booking?.performer?.[0]?.user_id === profile.id
   )
 }

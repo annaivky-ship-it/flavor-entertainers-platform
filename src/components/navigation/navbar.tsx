@@ -10,7 +10,7 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <nav className="border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50">
+    <nav className="border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
           <Image
@@ -24,16 +24,16 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-6">
-          <Link href="/services" className="text-gray-600 hover:text-gray-900 transition-colors">
+          <Link href="/services" className="text-gray-300 hover:text-pink-400 transition-colors">
             Services
           </Link>
-          <Link href="/performers" className="text-gray-600 hover:text-gray-900 transition-colors">
+          <Link href="/performers" className="text-gray-300 hover:text-pink-400 transition-colors">
             Performers
           </Link>
-          <Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">
+          <Link href="#features" className="text-gray-300 hover:text-pink-400 transition-colors">
             Features
           </Link>
-          <Link href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">
+          <Link href="#about" className="text-gray-300 hover:text-pink-400 transition-colors">
             About
           </Link>
           <Link href="/auth/login">
@@ -63,32 +63,32 @@ export function Navbar() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white">
+        <div className="md:hidden border-t border-gray-800 bg-white">
           <div className="container mx-auto px-4 py-4 space-y-4">
             <Link
               href="/services"
-              className="block text-gray-600 hover:text-gray-900 transition-colors"
+              className="block text-gray-300 hover:text-pink-400 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Services
             </Link>
             <Link
               href="/performers"
-              className="block text-gray-600 hover:text-gray-900 transition-colors"
+              className="block text-gray-300 hover:text-pink-400 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Performers
             </Link>
             <Link
               href="#features"
-              className="block text-gray-600 hover:text-gray-900 transition-colors"
+              className="block text-gray-300 hover:text-pink-400 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Features
             </Link>
             <Link
               href="#about"
-              className="block text-gray-600 hover:text-gray-900 transition-colors"
+              className="block text-gray-300 hover:text-pink-400 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               About

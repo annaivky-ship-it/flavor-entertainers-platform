@@ -1,4 +1,4 @@
-import { Twilio } from 'twilio';
+import twilio from 'twilio';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types/database';
 
@@ -12,11 +12,11 @@ if (!accountSid || !authToken) {
   console.warn('Twilio credentials not configured. SMS/WhatsApp features will be disabled.');
 }
 
-let twilioClient: Twilio | null = null;
+let twilioClient: any = null;
 
 try {
   if (accountSid && authToken) {
-    twilioClient = new Twilio(accountSid, authToken);
+    twilioClient = twilio(accountSid, authToken);
   }
 } catch (error) {
   console.warn('Twilio client initialization failed:', error);
