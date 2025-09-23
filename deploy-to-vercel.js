@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { execSync } = require('child_process');
 const fs = require('fs');
 require('dotenv').config({ path: '.env.local' });
@@ -61,7 +62,7 @@ function runCommand(command, description) {
     const output = execSync(command, { encoding: 'utf8', stdio: 'pipe' });
     console.log(`✅ ${description} completed`);
     return output;
-  } catch (error) {
+  } catch {
     console.error(`❌ ${description} failed:`, error.message);
     return null;
   }
@@ -81,7 +82,7 @@ function setVercelEnvVar(key, value, target = 'production') {
     execSync(`echo "${value}" | ${command}`, { encoding: 'utf8', stdio: 'pipe' });
     console.log(`✅ Set ${key}`);
     return true;
-  } catch (error) {
+  } catch {
     console.log(`⚠️  Failed to set ${key}: ${error.message}`);
     return false;
   }
@@ -94,7 +95,7 @@ async function main() {
   try {
     execSync('vercel whoami', { encoding: 'utf8', stdio: 'pipe' });
     console.log('✅ Logged in to Vercel');
-  } catch (error) {
+  } catch {
     console.log('\n🔐 Please login to Vercel first:');
     console.log('Run: vercel login');
     process.exit(1);

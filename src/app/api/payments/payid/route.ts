@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import {
-  createPaymentRequest,
-  updatePaymentStatus,
   validatePayID,
   createPayIDAccount,
-  getUserPayIDAccounts
+  calculatePaymentFees
 } from '@/lib/services/payid';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -24,24 +22,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await createPaymentRequest({
-      bookingId,
-      payerId,
-      recipientId,
-      amount,
-      description
-    });
-
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
-    }
+    // For now, return payment request info
+    // This would integrate with the new PayID transaction API routes
+    const fees = calculatePaymentFees(amount, 'payid');
 
     return NextResponse.json({
       success: true,
-      paymentId: result.paymentId
+      paymentInfo: {
+        amount,
+        fees: fees.feeAmount,
+        netAmount: fees.netAmount,
+        message: 'Use /api/payid/transactions endpoint for new PayID payments'
+      }
     });
 
   } catch (error: any) {
@@ -66,11 +58,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const accounts = await getUserPayIDAccounts(userId);
-
+    // This endpoint is deprecated in favor of /api/payid/accounts
     return NextResponse.json({
       success: true,
-      accounts
+      accounts: [],
+      message: 'Use /api/payid/accounts endpoint for PayID account management'
     });
 
   } catch (error: any) {

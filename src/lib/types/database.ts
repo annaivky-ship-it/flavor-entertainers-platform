@@ -18,6 +18,9 @@ export interface UserWithStats extends User {
   total_revenue: number;
   last_booking_date?: string;
   rating?: number;
+  email_verified: boolean;
+  phone_verified: boolean;
+  profile_picture_url?: string;
 }
 
 export interface Performer extends User {
@@ -74,6 +77,8 @@ export interface Booking {
   deposit_amount: number;
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
   payment_status: 'pending' | 'deposit_paid' | 'fully_paid' | 'refunded';
+  payment_method?: 'payid' | 'bank_transfer' | 'cash' | 'other';
+  payment_transaction_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -291,12 +296,61 @@ export interface VettingApplicationWithUser extends VettingApplication {
   user: User;
 }
 
-// Add missing properties to existing types
-export interface UserWithStatsExtended extends UserWithStats {
-  email_verified: boolean;
-  phone_verified: boolean;
-  profile_picture_url?: string;
+export interface PayIDAccount {
+  id: string;
+  user_id: string;
+  payid_identifier: string;
+  payid_type: 'email' | 'phone' | 'abn';
+  account_name: string;
+  bank_name: string;
+  bsb?: string;
+  account_number?: string;
+  is_verified: boolean;
+  is_active: boolean;
+  is_primary: boolean;
+  verification_status: 'pending' | 'verified' | 'failed' | 'expired';
+  created_at: string;
+  updated_at: string;
+  verified_at?: string;
+  last_used?: string;
+  deactivated_at?: string;
 }
+
+export interface PayIDTransaction {
+  id: string;
+  sender_payid_id?: string;
+  recipient_payid_id?: string;
+  booking_id?: string;
+  amount: number;
+  currency: string;
+  description: string;
+  reference?: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  transaction_type: 'payment' | 'refund' | 'chargeback';
+  external_transaction_id?: string;
+  failure_reason?: string;
+  created_at: string;
+  updated_at: string;
+  processed_at?: string;
+}
+
+export interface PayIDEvent {
+  id: string;
+  payid_account_id?: string;
+  transaction_id?: string;
+  event_type: string;
+  event_data?: any;
+  created_at: string;
+  user_agent?: string;
+  ip_address?: string;
+}
+
+export interface PayIDTransactionWithDetails extends PayIDTransaction {
+  sender_payid?: PayIDAccount;
+  recipient_payid?: PayIDAccount;
+  booking?: Booking;
+}
+
 
 // Database schema enums
 export type UserRole = 'client' | 'performer' | 'admin';
@@ -305,6 +359,10 @@ export type PaymentStatus = 'pending' | 'deposit_paid' | 'fully_paid' | 'refunde
 export type VettingStatus = 'pending' | 'approved' | 'rejected' | 'under_review';
 export type AvailabilityStatus = 'available' | 'busy' | 'unavailable';
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
+export type PayIDType = 'email' | 'phone' | 'abn';
+export type PayIDVerificationStatus = 'pending' | 'verified' | 'failed' | 'expired';
+export type PayIDTransactionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+export type PayIDTransactionType = 'payment' | 'refund' | 'chargeback';
 
 // Extend Database interface with missing tables
 export interface DatabaseExtended extends Database {
@@ -315,6 +373,43 @@ export interface DatabaseExtended extends Database {
         Insert: Omit<VettingApplication, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<VettingApplication, 'id' | 'created_at' | 'updated_at'>>;
       };
+      payid_accounts: {
+        Row: PayIDAccount;
+        Insert: Omit<PayIDAccount, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<PayIDAccount, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      payid_transactions: {
+        Row: PayIDTransaction;
+        Insert: Omit<PayIDTransaction, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<PayIDTransaction, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      payid_events: {
+        Row: PayIDEvent;
+        Insert: Omit<PayIDEvent, 'id' | 'created_at'>;
+        Update: never;
+      };
+      payment_transactions: {
+        Row: {
+          id: string;
+          booking_id: string;
+          payer_id: string;
+          recipient_id: string;
+          payment_method: string;
+          amount: number;
+          currency: string;
+          payid_identifier: string;
+          payid_name: string;
+          fee_amount: number;
+          net_amount: number;
+          status: string;
+          description: string;
+          due_date: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<DatabaseExtended['public']['Tables']['payment_transactions']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<DatabaseExtended['public']['Tables']['payment_transactions']['Row'], 'id' | 'created_at' | 'updated_at'>>;
+      };
     };
     Enums: {
       user_role: UserRole;
@@ -323,6 +418,10 @@ export interface DatabaseExtended extends Database {
       vetting_status: VettingStatus;
       availability_status: AvailabilityStatus;
       verification_status: VerificationStatus;
+      payid_type: PayIDType;
+      payid_verification_status: PayIDVerificationStatus;
+      payid_transaction_status: PayIDTransactionStatus;
+      payid_transaction_type: PayIDTransactionType;
     };
   };
 }

@@ -89,25 +89,25 @@ export function validatePayID(identifier: string): { valid: boolean; type: 'emai
   return { valid: false, type: null }
 }
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout
   return (...args: Parameters<T>) => {
     clearTimeout(timeout)
-    timeout = setTimeout(() => func.apply(undefined, args), wait)
+    timeout = setTimeout(() => func(...args), wait)
   }
 }
 
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: never[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
-      func.apply(undefined, args)
+      func(...args)
       inThrottle = true
       setTimeout(() => (inThrottle = false), limit)
     }
