@@ -26,7 +26,7 @@ import {
   CheckCircle,
   Eye,
   EyeOff,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -64,33 +64,33 @@ const slotStatusConfig = {
     color: 'bg-green-100 border-green-300 text-green-800',
     badge: 'bg-green-500',
     label: 'Available',
-    icon: CheckCircle
+    icon: CheckCircle,
   },
   booked: {
     color: 'bg-blue-100 border-blue-300 text-blue-800',
     badge: 'bg-blue-500',
     label: 'Booked',
-    icon: Calendar
+    icon: Calendar,
   },
   blocked: {
     color: 'bg-red-100 border-red-300 text-red-800',
     badge: 'bg-red-500',
     label: 'Blocked',
-    icon: AlertCircle
+    icon: AlertCircle,
   },
   tentative: {
     color: 'bg-yellow-100 border-yellow-300 text-yellow-800',
     badge: 'bg-yellow-500',
     label: 'Tentative',
-    icon: Clock
-  }
+    icon: Clock,
+  },
 };
 
 export function LiveCalendar({
   performerId,
   className,
   onSlotSelect,
-  showBookingDetails = true
+  showBookingDetails = true,
 }: LiveCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -120,7 +120,7 @@ export function LiveCalendar({
         date: prevDate.toISOString().split('T')[0],
         isToday: false,
         isCurrentMonth: false,
-        slots: []
+        slots: [],
       });
     }
 
@@ -133,7 +133,7 @@ export function LiveCalendar({
         date: currentDay.toISOString().split('T')[0],
         isToday,
         isCurrentMonth: true,
-        slots: generateMockSlots(currentDay) // In real app, fetch from API
+        slots: [], // Fetch from API
       });
     }
 
@@ -145,7 +145,7 @@ export function LiveCalendar({
         date: nextDate.toISOString().split('T')[0],
         isToday: false,
         isCurrentMonth: false,
-        slots: []
+        slots: [],
       });
     }
 
@@ -153,55 +153,6 @@ export function LiveCalendar({
   };
 
   // Generate mock time slots (in real app, this would come from API)
-  const generateMockSlots = (date: Date): TimeSlot[] => {
-    const slots: TimeSlot[] = [];
-    const dayOfWeek = date.getDay();
-
-    // Skip Sundays for this example
-    if (dayOfWeek === 0) return slots;
-
-    // Generate different slots based on day
-    const timeSlots = [
-      { start: '10:00', end: '12:00' },
-      { start: '14:00', end: '16:00' },
-      { start: '18:00', end: '20:00' },
-      { start: '20:30', end: '22:30' }
-    ];
-
-    timeSlots.forEach((time, index) => {
-      const random = Math.random();
-      let status: TimeSlot['status'] = 'available';
-      let booking_id: string | undefined;
-      let client_name: string | undefined;
-      let event_type: string | undefined;
-
-      // Simulate different booking statuses
-      if (random < 0.3) {
-        status = 'booked';
-        booking_id = `booking_${date.getTime()}_${index}`;
-        client_name = ['John Smith', 'Sarah Wilson', 'Mike Johnson', 'Emma Davis'][index % 4];
-        event_type = ['Wedding', 'Corporate Event', 'Birthday Party', 'Anniversary'][index % 4];
-      } else if (random < 0.4) {
-        status = 'tentative';
-      } else if (random < 0.5) {
-        status = 'blocked';
-      }
-
-      slots.push({
-        id: `slot_${date.getTime()}_${index}`,
-        start_time: `${date.toISOString().split('T')[0]}T${time.start}:00`,
-        end_time: `${date.toISOString().split('T')[0]}T${time.end}:00`,
-        status,
-        booking_id,
-        client_name,
-        event_type,
-        location: status === 'booked' ? 'Perth, WA' : undefined,
-        auto_accept: status === 'available' && random > 0.7
-      });
-    });
-
-    return slots;
-  };
 
   // Load calendar data
   const loadCalendarData = async () => {
@@ -248,16 +199,18 @@ export function LiveCalendar({
   };
 
   const toggleSlotAvailability = async (slotId: string) => {
-    setCalendarData(prev => prev.map(day => ({
-      ...day,
-      slots: day.slots.map(slot => {
-        if (slot.id === slotId) {
-          const newStatus = slot.status === 'available' ? 'blocked' : 'available';
-          return { ...slot, status: newStatus };
-        }
-        return slot;
-      })
-    })));
+    setCalendarData(prev =>
+      prev.map(day => ({
+        ...day,
+        slots: day.slots.map(slot => {
+          if (slot.id === slotId) {
+            const newStatus = slot.status === 'available' ? 'blocked' : 'available';
+            return { ...slot, status: newStatus };
+          }
+          return slot;
+        }),
+      }))
+    );
 
     toast.success('Slot availability updated');
   };
@@ -272,14 +225,24 @@ export function LiveCalendar({
   };
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn('w-full', className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl flex items-center space-x-2">
@@ -297,13 +260,8 @@ export function LiveCalendar({
                 {showPrivateSlots ? 'Hide' : 'Show'} Details
               </span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadCalendarData}
-              disabled={isLoading}
-            >
-              <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+            <Button variant="outline" size="sm" onClick={loadCalendarData} disabled={isLoading}>
+              <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
             </Button>
           </div>
         </div>
@@ -325,7 +283,7 @@ export function LiveCalendar({
         <div className="flex flex-wrap gap-2 pt-2">
           {Object.entries(slotStatusConfig).map(([status, config]) => (
             <div key={status} className="flex items-center space-x-1 text-xs">
-              <div className={cn("w-3 h-3 rounded", config.badge)}></div>
+              <div className={cn('w-3 h-3 rounded', config.badge)}></div>
               <span>{config.label}</span>
             </div>
           ))}
@@ -351,19 +309,21 @@ export function LiveCalendar({
               <div
                 key={index}
                 className={cn(
-                  "p-1 border rounded-lg cursor-pointer transition-all hover:bg-muted/50",
-                  day.isCurrentMonth ? "bg-background" : "bg-muted/20",
-                  day.isToday && "ring-2 ring-primary",
-                  selectedDate === day.date && "bg-primary/10"
+                  'p-1 border rounded-lg cursor-pointer transition-all hover:bg-muted/50',
+                  day.isCurrentMonth ? 'bg-background' : 'bg-muted/20',
+                  day.isToday && 'ring-2 ring-primary',
+                  selectedDate === day.date && 'bg-primary/10'
                 )}
                 onClick={() => setSelectedDate(day.date)}
               >
                 <div className="text-center">
-                  <div className={cn(
-                    "text-sm font-medium",
-                    day.isCurrentMonth ? "text-foreground" : "text-muted-foreground",
-                    day.isToday && "text-primary font-bold"
-                  )}>
+                  <div
+                    className={cn(
+                      'text-sm font-medium',
+                      day.isCurrentMonth ? 'text-foreground' : 'text-muted-foreground',
+                      day.isToday && 'text-primary font-bold'
+                    )}
+                  >
                     {dayNumber}
                   </div>
 
@@ -375,10 +335,7 @@ export function LiveCalendar({
                         return (
                           <div
                             key={slot.id}
-                            className={cn(
-                              "h-1 rounded-full mx-1",
-                              config.badge
-                            )}
+                            className={cn('h-1 rounded-full mx-1', config.badge)}
                           />
                         );
                       })}
@@ -390,10 +347,7 @@ export function LiveCalendar({
 
                   {/* Summary badge */}
                   {summary.count > 0 && (
-                    <Badge
-                      variant="outline"
-                      className="mt-1 text-xs px-1 py-0"
-                    >
+                    <Badge variant="outline" className="mt-1 text-xs px-1 py-0">
                       {summary.count}
                     </Badge>
                   )}
@@ -411,7 +365,7 @@ export function LiveCalendar({
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
               })}
             </h4>
 
@@ -427,18 +381,18 @@ export function LiveCalendar({
                     const config = slotStatusConfig[slot.status];
                     const startTime = new Date(slot.start_time).toLocaleTimeString('en-AU', {
                       hour: '2-digit',
-                      minute: '2-digit'
+                      minute: '2-digit',
                     });
                     const endTime = new Date(slot.end_time).toLocaleTimeString('en-AU', {
                       hour: '2-digit',
-                      minute: '2-digit'
+                      minute: '2-digit',
                     });
 
                     return (
                       <div
                         key={slot.id}
                         className={cn(
-                          "p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm",
+                          'p-3 rounded-lg border cursor-pointer transition-all hover:shadow-sm',
                           config.color
                         )}
                         onClick={() => handleSlotClick(slot)}
@@ -505,13 +459,15 @@ export function LiveCalendar({
             <DialogDescription>
               {selectedSlot && (
                 <>
-                  {new Date(selectedSlot.start_time).toLocaleDateString()} - {' '}
+                  {new Date(selectedSlot.start_time).toLocaleDateString()} -{' '}
                   {new Date(selectedSlot.start_time).toLocaleTimeString('en-AU', {
                     hour: '2-digit',
-                    minute: '2-digit'
-                  })} to {new Date(selectedSlot.end_time).toLocaleTimeString('en-AU', {
+                    minute: '2-digit',
+                  })}{' '}
+                  to{' '}
+                  {new Date(selectedSlot.end_time).toLocaleTimeString('en-AU', {
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
                 </>
               )}
@@ -521,12 +477,8 @@ export function LiveCalendar({
           {selectedSlot && (
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Badge variant="outline">
-                  {slotStatusConfig[selectedSlot.status].label}
-                </Badge>
-                {selectedSlot.auto_accept && (
-                  <Badge variant="secondary">Auto-Accept</Badge>
-                )}
+                <Badge variant="outline">{slotStatusConfig[selectedSlot.status].label}</Badge>
+                {selectedSlot.auto_accept && <Badge variant="secondary">Auto-Accept</Badge>}
               </div>
 
               {selectedSlot.client_name && (
@@ -552,25 +504,16 @@ export function LiveCalendar({
 
               <div className="flex space-x-2">
                 {selectedSlot.status === 'available' && (
-                  <Button
-                    variant="outline"
-                    onClick={() => toggleSlotAvailability(selectedSlot.id)}
-                  >
+                  <Button variant="outline" onClick={() => toggleSlotAvailability(selectedSlot.id)}>
                     Block Slot
                   </Button>
                 )}
                 {selectedSlot.status === 'blocked' && (
-                  <Button
-                    variant="outline"
-                    onClick={() => toggleSlotAvailability(selectedSlot.id)}
-                  >
+                  <Button variant="outline" onClick={() => toggleSlotAvailability(selectedSlot.id)}>
                     Make Available
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Close
                 </Button>
               </div>

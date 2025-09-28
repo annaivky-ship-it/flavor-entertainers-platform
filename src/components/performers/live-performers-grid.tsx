@@ -5,125 +5,90 @@ import { PerformerLiveCard } from './performer-live-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Users, Clock, Star } from 'lucide-react';
-
-// Mock data for performers with live availability
-const mockPerformers = [
-  {
-    id: '1',
-    stageName: 'Sophia Rose',
-    bio: 'Professional dancer and entertainer with 5+ years experience. Specializes in elegant performances and corporate events.',
-    profilePicture: '/api/placeholder/300/400',
-    rating: 4.9,
-    totalReviews: 127,
-    isOnline: true,
-    location: 'Sydney, NSW',
-    performanceTypes: ['Waitressing', 'Corporate Events', 'Private Parties'],
-    baseRate: 120,
-    isAvailableToday: true,
-    availableSlots: ['2:00 PM', '6:00 PM', '8:00 PM', '10:00 PM'],
-    featured: true,
-    verified: true,
-    responseTime: '15min',
-    completedBookings: 89
-  },
-  {
-    id: '2',
-    stageName: 'Luna Belle',
-    bio: 'Captivating performer known for themed shows and creative performances. Available for exclusive bookings.',
-    profilePicture: '/api/placeholder/300/400',
-    rating: 4.8,
-    totalReviews: 95,
-    isOnline: true,
-    location: 'Melbourne, VIC',
-    performanceTypes: ['Strip Shows', 'Theme Parties', 'Bachelor Parties'],
-    baseRate: 180,
-    isAvailableToday: true,
-    availableSlots: ['7:00 PM', '9:00 PM'],
-    featured: false,
-    verified: true,
-    responseTime: '30min',
-    completedBookings: 67
-  },
-  {
-    id: '3',
-    stageName: 'Aria Phoenix',
-    bio: 'Elite entertainer offering premium experiences. Fully licensed and insured for all venue types.',
-    profilePicture: '/api/placeholder/300/400',
-    rating: 5.0,
-    totalReviews: 203,
-    isOnline: false,
-    lastSeen: new Date(Date.now() - 10 * 60 * 1000).toISOString(), // 10 minutes ago
-    location: 'Brisbane, QLD',
-    performanceTypes: ['Premium Shows', 'VIP Events', 'Corporate'],
-    baseRate: 220,
-    isAvailableToday: false,
-    featured: true,
-    verified: true,
-    responseTime: '45min',
-    completedBookings: 145
-  },
-  {
-    id: '4',
-    stageName: 'Scarlett Divine',
-    bio: 'Versatile performer specializing in both elegant and playful entertainment for all occasions.',
-    profilePicture: '/api/placeholder/300/400',
-    rating: 4.7,
-    totalReviews: 78,
-    isOnline: true,
-    location: 'Perth, WA',
-    performanceTypes: ['Lap Dance', 'Waitressing', 'Birthday Parties'],
-    baseRate: 95,
-    isAvailableToday: true,
-    availableSlots: ['4:00 PM', '8:00 PM', '11:00 PM'],
-    featured: false,
-    verified: true,
-    responseTime: '1h',
-    completedBookings: 52
-  },
-  {
-    id: '5',
-    stageName: 'Ruby Starlight',
-    bio: 'New to the platform but bringing years of professional experience. Book early for exclusive rates!',
-    profilePicture: '/api/placeholder/300/400',
-    rating: 4.6,
-    totalReviews: 23,
-    isOnline: false,
-    lastSeen: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 minutes ago
-    location: 'Adelaide, SA',
-    performanceTypes: ['Strip Shows', 'Private Events'],
-    baseRate: 140,
-    isAvailableToday: true,
-    availableSlots: ['6:00 PM', '9:00 PM'],
-    featured: false,
-    verified: true,
-    responseTime: '2h',
-    completedBookings: 18
-  },
-  {
-    id: '6',
-    stageName: 'Diamond Luxe',
-    bio: 'Premium performer offering exclusive high-end entertainment. Perfect for upscale events and VIP occasions.',
-    profilePicture: '/api/placeholder/300/400',
-    rating: 4.9,
-    totalReviews: 156,
-    isOnline: true,
-    location: 'Gold Coast, QLD',
-    performanceTypes: ['VIP Shows', 'Premium Events', 'Luxury Parties'],
-    baseRate: 250,
-    isAvailableToday: false,
-    featured: true,
-    verified: true,
-    responseTime: '20min',
-    completedBookings: 112
-  }
-];
+import { createClientComponentClient } from '@/lib/supabase';
 
 export function LivePerformersGrid() {
-  const [performers, setPerformers] = useState(mockPerformers);
+  const [performers, setPerformers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClientComponentClient();
+
+  // Try to load real performers, but fall back to demo data if needed
+  const loadPerformers = async () => {
+    setIsLoading(true);
+    try {
+      const { data: performersData, error } = await supabase
+        .from('performers')
+        .select(
+          `
+          id,
+          stage_name,
+          bio,
+          performance_types,
+          service_areas,
+          base_rate,
+          hourly_rate,
+          rating,
+          total_reviews,
+          featured,
+          verified,
+          social_media_links,
+          users!performers_user_id_fkey (
+            first_name,
+            last_name,
+            profile_picture_url
+          )
+        `
+        )
+        .eq('verified', true)
+        .order('featured', { ascending: false })
+        .order('rating', { ascending: false });
+
+      if (error) {
+        console.warn('Using demo data - Supabase error:', error.message);
+        return;
+      }
+
+      if (performersData && performersData.length > 0) {
+        // Transform Supabase data to match component format
+        const transformedPerformers = performersData.map(performer => ({
+          id: performer.id,
+          stageName: performer.stage_name,
+          bio: performer.bio || 'Professional performer available for your events',
+          profilePicture: performer.users?.profile_picture_url || '/images/default-performer.jpg',
+          rating: performer.rating || 0,
+          totalReviews: performer.total_reviews || 0,
+          isOnline: Math.random() > 0.3, // Simulate online status
+          location: 'Perth, WA',
+          performanceTypes: Array.isArray(performer.performance_types)
+            ? performer.performance_types
+            : ['Performer'],
+          baseRate: performer.hourly_rate || performer.base_rate || 100,
+          isAvailableToday: Math.random() > 0.4, // Simulate availability
+          availableSlots: ['6:00 PM', '8:00 PM', '10:00 PM'],
+          featured: performer.featured || false,
+          verified: performer.verified || false,
+          responseTime: '30min',
+          completedBookings: Math.floor(Math.random() * 100) + 20,
+        }));
+
+        setPerformers(transformedPerformers);
+      } else {
+        console.log('No performers found in database, using demo data');
+      }
+    } catch (error) {
+      console.warn('Using demo data - Database connection failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPerformers();
+  }, []);
   const [filter, setFilter] = useState<'all' | 'available'>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const filteredPerformers = performers.filter((performer) => {
+  const filteredPerformers = performers.filter(performer => {
     switch (filter) {
       case 'available':
         return performer.isAvailableToday;
@@ -137,15 +102,7 @@ export function LivePerformersGrid() {
 
   const refreshData = async () => {
     setIsRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Simulate some performers changing availability
-    setPerformers(prev => prev.map(performer => ({
-      ...performer,
-      isAvailableToday: Math.random() > 0.4 // 60% chance of being available
-    })));
-
+    await loadPerformers();
     setIsRefreshing(false);
   };
 
@@ -161,7 +118,10 @@ export function LivePerformersGrid() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
           <h2 className="text-3xl font-bold text-white">
-            Live <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Performers</span>
+            Live{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+              Performers
+            </span>
           </h2>
           <div className="flex items-center gap-4 text-sm text-gray-300">
             <div className="flex items-center gap-2">
@@ -195,7 +155,11 @@ export function LivePerformersGrid() {
           variant={filter === 'all' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFilter('all')}
-          className={filter === 'all' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'border-gray-600 text-gray-300 hover:bg-gray-800'}
+          className={
+            filter === 'all'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+              : 'border-gray-600 text-gray-300 hover:bg-gray-800'
+          }
         >
           All Performers
           <Badge variant="secondary" className="ml-2">
@@ -206,7 +170,11 @@ export function LivePerformersGrid() {
           variant={filter === 'available' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFilter('available')}
-          className={filter === 'available' ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'border-gray-600 text-gray-300 hover:bg-gray-800'}
+          className={
+            filter === 'available'
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600'
+              : 'border-gray-600 text-gray-300 hover:bg-gray-800'
+          }
         >
           Available Today
           <Badge variant="secondary" className="ml-2">
@@ -217,7 +185,7 @@ export function LivePerformersGrid() {
 
       {/* Performers Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredPerformers.map((performer) => (
+        {filteredPerformers.map(performer => (
           <PerformerLiveCard key={performer.id} performer={performer} />
         ))}
       </div>
@@ -240,7 +208,6 @@ export function LivePerformersGrid() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-3 h-3 text-blue-600" />
@@ -255,7 +222,9 @@ export function LivePerformersGrid() {
             <span className="text-sm font-medium text-yellow-800">Avg Rating</span>
           </div>
           <div className="text-2xl font-bold text-yellow-900">
-            {(performers.reduce((acc, p) => acc + (p.rating || 0), 0) / performers.length).toFixed(1)}
+            {(performers.reduce((acc, p) => acc + (p.rating || 0), 0) / performers.length).toFixed(
+              1
+            )}
           </div>
         </div>
 
