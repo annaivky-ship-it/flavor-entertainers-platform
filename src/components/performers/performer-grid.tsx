@@ -14,19 +14,21 @@ import { formatCurrency } from '@/lib/utils'
 interface Performer {
   id: string
   stage_name: string
+  slug: string
   bio: string
-  performance_types: string[]
-  service_areas: string[]
-  base_rate: number
-  hourly_rate: number
+  services: any
+  rate_card: any
+  is_available: boolean
+  hero_image: string
   rating: number
   total_reviews: number
   featured: boolean
   verified: boolean
-  user: {
-    profile_picture_url: string
-    first_name: string
-    last_name: string
+  profile: {
+    display_name: string
+    whatsapp: string
+    phone: string
+    email: string
   }
 }
 
@@ -45,9 +47,9 @@ const PerformerCard = memo(({
   <Card key={performer.id} className="card-hover group">
     <div className="relative">
       <div className="aspect-video bg-gradient-to-br from-purple-100 to-pink-100 rounded-t-lg overflow-hidden">
-        {performer.user.profile_picture_url ? (
+        {performer.hero_image ? (
           <Image
-            src={performer.user.profile_picture_url}
+            src={performer.hero_image}
             alt={performer.stage_name}
             fill
             className="object-cover"
@@ -116,38 +118,38 @@ const PerformerCard = memo(({
         </p>
 
         <div className="flex flex-wrap gap-1">
-          {performer.performance_types.slice(0, 3).map((type, index) => (
+          {Object.keys(performer.services || {}).slice(0, 3).map((service, index) => (
             <Badge key={index} variant="secondary" className="text-xs">
-              {type}
+              {service.replace('_', ' ')}
             </Badge>
           ))}
-          {performer.performance_types.length > 3 && (
+          {Object.keys(performer.services || {}).length > 3 && (
             <Badge variant="secondary" className="text-xs">
-              +{performer.performance_types.length - 3} more
+              +{Object.keys(performer.services || {}).length - 3} more
             </Badge>
           )}
         </div>
 
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-1 text-muted-foreground">
-            <MapPin className="w-4 h-4" />
-            <span>{performer.service_areas[0] || 'Multiple areas'}</span>
+            <div className={`w-2 h-2 rounded-full mr-2 ${performer.is_available ? 'bg-green-500' : 'bg-gray-400'}`} />
+            <span>{performer.is_available ? 'Available Now' : 'Unavailable'}</span>
           </div>
           <div className="flex items-center gap-1 font-semibold">
             <DollarSign className="w-4 h-4" />
-            <span>{formatCurrency(performer.hourly_rate)}/hr</span>
+            <span>From ${Math.min(...Object.values(performer.rate_card || { default: 100 }))}/hr</span>
           </div>
         </div>
 
         <div className="pt-2 border-t">
           <div className="flex gap-2">
-            <Link href={`/performers/${performer.id}`} className="flex-1">
+            <Link href={`/performer/${performer.slug || performer.id}`} className="flex-1">
               <Button variant="outline" className="w-full">
                 View Profile
               </Button>
             </Link>
             <Link href={`/book/${performer.id}`} className="flex-1">
-              <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+              <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700">
                 Book Now
               </Button>
             </Link>
@@ -207,10 +209,11 @@ export function PerformerGrid({
         .from('performers')
         .select(`
           *,
-          user:users!inner(
-            profile_picture_url,
-            first_name,
-            last_name
+          profile:profiles!performers_user_id_fkey(
+            display_name,
+            whatsapp,
+            phone,
+            email
           )
         `, { count: 'exact' })
 
@@ -223,10 +226,10 @@ export function PerformerGrid({
           query = query.order('rating', { ascending: false }).order('total_reviews', { ascending: false })
           break
         case 'price-low':
-          query = query.order('hourly_rate', { ascending: true })
+          query = query.order('rate_card', { ascending: true })
           break
         case 'price-high':
-          query = query.order('hourly_rate', { ascending: false })
+          query = query.order('rate_card', { ascending: false })
           break
         case 'newest':
           query = query.order('created_at', { ascending: false })
@@ -241,19 +244,11 @@ export function PerformerGrid({
       }
 
       if (searchFilters.type) {
-        query = query.contains('performance_types', [searchFilters.type])
+        query = query.contains('services', { [searchFilters.type]: true })
       }
 
-      if (searchFilters.location) {
-        query = query.contains('service_areas', [searchFilters.location])
-      }
-
-      if (searchFilters.minPrice) {
-        query = query.gte('hourly_rate', parseInt(searchFilters.minPrice))
-      }
-
-      if (searchFilters.maxPrice) {
-        query = query.lte('hourly_rate', parseInt(searchFilters.maxPrice))
+      if (searchFilters.available === 'true') {
+        query = query.eq('is_available', true)
       }
 
       if (searchFilters.featured === 'true') {
