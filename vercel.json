@@ -21,10 +21,5 @@
       "path": "/api/cron/reminders",
       "schedule": "0 10 * * *"
     }
-  ],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key"
-  }
+  ]
 }
