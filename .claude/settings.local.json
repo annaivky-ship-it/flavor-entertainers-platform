@@ -15,7 +15,10 @@
       "Bash(supabase migration new:*)",
       "Bash(supabase db:*)",
       "Bash(supabase migration:*)",
-      "Bash(npx prisma db push:*)"
+      "Bash(npx prisma db push:*)",
+      "Bash(docker:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(./apply-migration-docker.bat)"
     ],
     "deny": [],
     "ask": []
