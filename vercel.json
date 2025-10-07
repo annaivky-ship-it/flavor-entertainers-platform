@@ -1,1 +1,30 @@
-{ "buildCommand": "npm run build", "outputDirectory": ".next", "framework": "nextjs" }
+{
+  "framework": "nextjs",
+  "buildCommand": "npm install && prisma generate && npm run build",
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/cleanup",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "0 */6 * * *"
+    }
+  ],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET": "@jwt_secret",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key"
+  }
+}
