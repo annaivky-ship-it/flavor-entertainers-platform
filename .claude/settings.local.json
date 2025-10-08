@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(vercel:*)",
+      "Bash(npm install:*)",
+      "Bash(tee:*)",
+      "Read(//c/tmp/**)",
+      "Bash(curl:*)",
+      "Bash(npm run:*)",
+      "Bash(supabase link:*)",
+      "Bash(supabase migration new:*)",
+      "Bash(supabase db:*)",
+      "Bash(supabase migration:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(docker:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(./apply-migration-docker.bat)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

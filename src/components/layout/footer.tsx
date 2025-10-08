@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { NewsletterSection } from './newsletter-section';
 import {
   Star,
   Phone,
@@ -108,26 +108,7 @@ export function Footer() {
       </div>
 
       {/* Newsletter Section - Mobile First */}
-      <div className="bg-muted/30 py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-xl md:text-2xl font-bold mb-2">Stay in the loop</h2>
-            <p className="text-muted-foreground mb-6 text-sm md:text-base">
-              Get updates on new performers, exclusive offers, and event planning tips.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1"
-              />
-              <Button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 px-6">
-                Subscribe
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <NewsletterSection />
 
       {/* Main Footer Content */}
       <div className="py-12">

@@ -1,1 +1,10 @@
-{ "buildCommand": "npm run build", "outputDirectory": ".next", "framework": "nextjs" }
+{
+  "framework": "nextjs",
+  "buildCommand": "npm install && npx prisma generate && npm run build",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}

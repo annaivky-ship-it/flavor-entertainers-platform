@@ -1,3 +1,8 @@
+import { Suspense } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { AdminDashboard } from '@/components/admin/admin-dashboard'
+
 function AdminDashboardSkeleton() {
   return (
     <div className="space-y-6">
@@ -31,19 +36,17 @@ function AdminDashboardSkeleton() {
 
 export default function AdminPage() {
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage bookings, payments, performers, and platform operations
-          </p>
-        </div>
-
-        <Suspense fallback={<AdminDashboardSkeleton />}>
-          <AdminDashboard />
-        </Suspense>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage bookings, payments, performers, and platform operations
+        </p>
       </div>
-    </AdminLayout>
+
+      <Suspense fallback={<AdminDashboardSkeleton />}>
+        <AdminDashboard />
+      </Suspense>
+    </div>
   );
 }

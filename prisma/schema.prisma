@@ -1,0 +1,319 @@
+// Flavor Entertainers Platform - Complete Backend Database Schema
+// Updated with comprehensive 13-model structure for full-stack implementation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  CLIENT
+  PERFORMER
+  ADMIN
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+enum ServiceCategory {
+  MASSAGE
+  COMPANIONSHIP
+  ENTERTAINMENT
+  INTIMATE
+  BESPOKE
+}
+
+enum BookingStatus {
+  PENDING_DEPOSIT
+  PENDING_APPROVAL
+  APPROVED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum PaymentMethod {
+  PAYID
+  BANK_TRANSFER
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+enum VettingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  BOOKING_CREATED
+  BOOKING_APPROVED
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  DEPOSIT_UPLOADED
+  DEPOSIT_VERIFIED
+  VETTING_APPROVED
+  VETTING_REJECTED
+  SYSTEM_ALERT
+}
+
+// ============================================================================
+// CORE MODELS
+// ============================================================================
+
+model User {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  phone                 String?                @unique
+  passwordHash          String
+  role                  UserRole               @default(CLIENT)
+  firstName             String?
+  lastName              String?
+  dateOfBirth           DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  lastLoginAt           DateTime?
+
+  // Relations
+  performer             Performer?
+  bookingsAsClient      Booking[]              @relation("ClientBookings")
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+
+  @@map("users")
+}
+
+model Performer {
+  id                    String                 @id @default(uuid())
+  userId                String                 @unique
+  stageName             String                 @unique
+  bio                   String?
+  profileImageUrl       String?
+  galleryImages         String[]               @default([])
+  availabilityStatus    AvailabilityStatus     @default(OFFLINE)
+  isVerified            Boolean                @default(false)
+  isActive              Boolean                @default(true)
+  rating                Float                  @default(0)
+  totalBookings         Int                    @default(0)
+  hourlyRate            Float?
+  whatsappNumber        String?
+  preferredLocations    String[]               @default([])
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  // Relations
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services              PerformerService[]
+  bookings              Booking[]
+  availability          Availability[]
+  vettingApplication    VettingApplication?
+
+  @@map("performers")
+}
+
+model Service {
+  id                    String                 @id @default(uuid())
+  name                  String                 @unique
+  description           String
+  category              ServiceCategory
+  basePrice             Float
+  duration              Int                    // minutes
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  // Relations
+  performers            PerformerService[]
+  bookings              Booking[]
+
+  @@map("services")
+}
+
+model PerformerService {
+  id                    String                 @id @default(uuid())
+  performerId           String
+  serviceId             String
+  customPrice           Float?                 // Override base price
+  isOffered             Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+
+  // Relations
+  performer             Performer              @relation(fields: [performerId], references: [id], onDelete: Cascade)
+  service               Service                @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([performerId, serviceId])
+  @@map("performer_services")
+}
+
+model Booking {
+  id                    String                 @id @default(uuid())
+  bookingRef            String                 @unique
+  clientId              String
+  performerId           String
+  serviceId             String
+  status                BookingStatus          @default(PENDING_DEPOSIT)
+  scheduledDate         DateTime
+  scheduledTime         String                 // HH:mm format
+  duration              Int                    // minutes
+  location              String
+  specialRequests       String?
+  totalAmount           Float
+  depositAmount         Float
+  depositPaid           Boolean                @default(false)
+  depositVerifiedAt     DateTime?
+  approvedByAdminAt     DateTime?
+  confirmedByPerformerAt DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  // Relations
+  client                User                   @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
+  performer             Performer              @relation(fields: [performerId], references: [id], onDelete: Cascade)
+  service               Service                @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  paymentTransaction    PaymentTransaction?
+
+  @@map("bookings")
+}
+
+model PaymentTransaction {
+  id                    String                 @id @default(uuid())
+  bookingId             String                 @unique
+  paymentMethod         PaymentMethod
+  paymentStatus         PaymentStatus          @default(PENDING)
+  amount                Float
+  receiptImageUrl       String?
+  payidReference        String?                // For PayID payments
+  verifiedAt            DateTime?
+  verifiedBy            String?                // Admin user ID
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  // Relations
+  booking               Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("payment_transactions")
+}
+
+model VettingApplication {
+  id                    String                 @id @default(uuid())
+  performerId           String                 @unique
+  fullLegalName         String
+  idType                String                 // "passport", "drivers_license", "national_id"
+  idNumber              String
+  idDocumentUrl         String
+  selfieWithIdUrl       String
+  proofOfAgeUrl         String?
+  policeCheckUrl        String?
+  contactNumber         String
+  emergencyContact      String
+  emergencyPhone        String
+  consentAgreed         Boolean                @default(false)
+  status                VettingStatus          @default(PENDING)
+  reviewedAt            DateTime?
+  reviewedBy            String?                // Admin user ID
+  reviewNotes           String?
+  rejectionReason       String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  // Relations
+  performer             Performer              @relation(fields: [performerId], references: [id], onDelete: Cascade)
+
+  @@map("vetting_applications")
+}
+
+model DnsList {
+  id                    String                 @id @default(uuid())
+  email                 String?
+  phone                 String?
+  reason                String
+  addedBy               String                 // Admin user ID
+  isActive              Boolean                @default(true)
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@map("dns_list")
+}
+
+model AuditLog {
+  id                    String                 @id @default(uuid())
+  userId                String?
+  action                String
+  entity                String                 // "booking", "user", "payment", etc.
+  entityId              String?
+  changes               String?                // JSON string of changes
+  ipAddress             String?
+  userAgent             String?
+  createdAt             DateTime               @default(now())
+
+  // Relations
+  user                  User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_log")
+}
+
+model Notification {
+  id                    String                 @id @default(uuid())
+  userId                String
+  type                  NotificationType
+  title                 String
+  message               String
+  isRead                Boolean                @default(false)
+  relatedEntityType     String?                // "booking", "payment", "vetting"
+  relatedEntityId       String?
+  createdAt             DateTime               @default(now())
+
+  // Relations
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Availability {
+  id                    String                 @id @default(uuid())
+  performerId           String
+  date                  DateTime               // Date only (time set to 00:00:00)
+  startTime             String                 // HH:mm format
+  endTime               String                 // HH:mm format
+  isAvailable           Boolean                @default(true)
+  isRecurring           Boolean                @default(false)
+  recurringDayOfWeek    Int?                   // 0-6 (Sunday-Saturday)
+  createdAt             DateTime               @default(now())
+
+  // Relations
+  performer             Performer              @relation(fields: [performerId], references: [id], onDelete: Cascade)
+
+  @@map("availability")
+}
+
+model SystemSettings {
+  id                    String                 @id @default(uuid())
+  key                   String                 @unique
+  value                 String
+  description           String?
+  updatedAt             DateTime               @updatedAt
+
+  @@map("system_settings")
+}

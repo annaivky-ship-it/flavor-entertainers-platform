@@ -8,6 +8,8 @@ export const phoneSchema = z
   .min(10, 'Phone number must be at least 10 digits')
   .regex(/^(\+61|0)[2-9]\d{8}$/, 'Please enter a valid Australian phone number');
 
+export const whatsappSchema = z.string().regex(/^whatsapp:\+?[1-9]\d{1,14}$/, 'Please enter a valid WhatsApp number');
+
 export const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
@@ -15,7 +17,15 @@ export const passwordSchema = z
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/\d/, 'Password must contain at least one number');
 
-// User and Profile schemas
+// User and Auth schemas
+export const userRegistrationSchema = z.object({
+  email: emailSchema,
+  role: z.enum(['ADMIN', 'PERFORMER', 'CLIENT']),
+  phone: phoneSchema.optional(),
+  whatsapp: whatsappSchema.optional(),
+  legal_name: z.string().min(2, 'Legal name must be at least 2 characters').optional()
+});
+
 export const profileSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters'),
   whatsapp: phoneSchema.optional(),
@@ -70,6 +80,90 @@ export const bookingApprovalSchema = z.object({
   action: z.enum(['approve', 'reject']),
   notes: z.string().optional(),
   performerNotes: z.string().optional(),
+});
+
+// Backend API schemas for new Prisma structure
+export const performerProfileCreateSchema = z.object({
+  stage_name: z.string().min(2, 'Stage name must be at least 2 characters'),
+  bio: z.string().max(1000, 'Bio must be under 1000 characters').optional(),
+  categories: z.array(z.enum(['WAITRESS', 'STRIP', 'XXX', 'SPECIALTY'])),
+  location_area: z.string().optional(),
+  base_rates: z.record(z.string(), z.number().positive()).optional()
+});
+
+export const availabilityCreateSchema = z.object({
+  performer_id: z.string().cuid(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Time must be in HH:MM format'),
+  end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Time must be in HH:MM format'),
+  is_available: z.boolean().default(true)
+});
+
+export const serviceCreateSchema = z.object({
+  category: z.enum(['WAITRESS', 'STRIP', 'XXX', 'SPECIALTY']),
+  name: z.string().min(2, 'Service name must be at least 2 characters'),
+  description: z.string().optional(),
+  unit: z.enum(['PER_HOUR', 'FLAT']),
+  min_duration: z.number().int().positive().optional(),
+  base_rate: z.number().positive('Rate must be positive')
+});
+
+export const bookingCreateSchema = z.object({
+  performer_id: z.string().cuid('Invalid performer ID'),
+  service_id: z.string().cuid('Invalid service ID'),
+  event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Time must be in HH:MM format'),
+  duration_mins: z.number().int().min(15, 'Minimum duration is 15 minutes'),
+  address: z.string().min(10, 'Please provide a complete address'),
+  notes: z.string().max(500, 'Notes must be under 500 characters').optional()
+});
+
+export const bookingUpdateSchema = z.object({
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  notes: z.string().max(500).optional()
+});
+
+export const paymentTransactionSchema = z.object({
+  booking_id: z.string().cuid(),
+  type: z.enum(['DEPOSIT', 'BALANCE', 'REFERRAL']),
+  method: z.enum(['PAYID', 'OTHER']),
+  amount: z.number().positive('Amount must be positive'),
+  reference: z.string().optional()
+});
+
+export const vettingApplicationCreateSchema = z.object({
+  event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  address: z.string().min(10, 'Please provide a complete address'),
+  event_type: z.string().min(5, 'Please describe the event type'),
+  id_valid: z.boolean().default(false)
+});
+
+export const dnsListEntrySchema = z.object({
+  full_name: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: emailSchema.optional(),
+  phone: phoneSchema.optional(),
+  reason: z.string().min(10, 'Please provide a detailed reason')
+});
+
+// Query parameter schemas
+export const paginationSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10)
+});
+
+export const performerFilterBackendSchema = z.object({
+  category: z.enum(['WAITRESS', 'STRIP', 'XXX', 'SPECIALTY']).optional(),
+  location_area: z.string().optional(),
+  availability_status: z.enum(['ONLINE', 'OFFLINE', 'BUSY']).optional(),
+  verified: z.coerce.boolean().optional()
+});
+
+export const bookingFilterBackendSchema = z.object({
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  performer_id: z.string().cuid().optional(),
+  client_id: z.string().cuid().optional(),
+  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
 });
 
 // Payment schemas
@@ -229,6 +323,20 @@ export type ReviewFormData = z.infer<typeof reviewSchema>;
 export type SystemSettingsFormData = z.infer<typeof systemSettingsSchema>;
 export type SafetyAlertFormData = z.infer<typeof safetyAlertSchema>;
 export type PerformerFilterFormData = z.infer<typeof performerFilterSchema>;
+
+// Backend API types
+export type UserRegistration = z.infer<typeof userRegistrationSchema>;
+export type PerformerProfileCreate = z.infer<typeof performerProfileCreateSchema>;
+export type BookingCreate = z.infer<typeof bookingCreateSchema>;
+export type BookingUpdate = z.infer<typeof bookingUpdateSchema>;
+export type PaymentTransaction = z.infer<typeof paymentTransactionSchema>;
+export type VettingApplicationCreate = z.infer<typeof vettingApplicationCreateSchema>;
+export type DNSListEntry = z.infer<typeof dnsListEntrySchema>;
+export type ServiceCreate = z.infer<typeof serviceCreateSchema>;
+export type AvailabilityCreate = z.infer<typeof availabilityCreateSchema>;
+export type PaginationParams = z.infer<typeof paginationSchema>;
+export type PerformerFiltersBackend = z.infer<typeof performerFilterBackendSchema>;
+export type BookingFiltersBackend = z.infer<typeof bookingFilterBackendSchema>;
 
 // Custom validation helpers
 export const validateAustralianPostcode = (postcode: string): boolean => {
